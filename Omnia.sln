@@ -5,6 +5,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Omnia", "Omnia\Omnia.csproj
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Omnia.Console", "Omnia.Console\Omnia.Console.csproj", "{93F566FF-BFCD-448C-A808-95ADBEDEBFA8}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Omnia.Test", "Omnia.Test\Omnia.Test.csproj", "{2F14BA00-7ED6-4B83-B5AF-ECE46A72BEAB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -19,6 +21,10 @@ Global
 		{93F566FF-BFCD-448C-A808-95ADBEDEBFA8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{93F566FF-BFCD-448C-A808-95ADBEDEBFA8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{93F566FF-BFCD-448C-A808-95ADBEDEBFA8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2F14BA00-7ED6-4B83-B5AF-ECE46A72BEAB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2F14BA00-7ED6-4B83-B5AF-ECE46A72BEAB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2F14BA00-7ED6-4B83-B5AF-ECE46A72BEAB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2F14BA00-7ED6-4B83-B5AF-ECE46A72BEAB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
