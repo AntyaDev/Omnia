@@ -19,6 +19,8 @@ namespace Omnia.Compiller
             NonGrammarTerminals.Add(singleLineComment);
             NonGrammarTerminals.Add(delimitedComment);
 
+            var lPar = ToTerm("(");
+            var rPar = ToTerm(")");
             var dot = ToTerm(".", "Dot");
             var comma = ToTerm(",", "Comma");
             var open = ToTerm("open", "Open");
@@ -30,6 +32,10 @@ namespace Omnia.Compiller
             var assign = new NonTerminal("Assign");
             var simpleAssignable = new NonTerminal("SimpleAssignable");
             var assignable = new NonTerminal("Assignable");
+            var accessor = new NonTerminal("Accessor");
+            var argList = new NonTerminal("ArgList");
+            var arguments = new NonTerminal("Arguments");
+            var invocation = new NonTerminal("Invocation");
 
             var openExpr = new NonTerminal("OpenExpr");
             var openArg = new NonTerminal("OpenArg");
@@ -38,8 +44,8 @@ namespace Omnia.Compiller
             alphaNumeric.Rule = number | @string | @char;
 
             literal.Rule = alphaNumeric | @bool;
-            
-            expr.Rule = value | assign;
+
+            expr.Rule = value | assign | invocation;
 
             line.Rule = expr + Eos;
 
@@ -53,7 +59,7 @@ namespace Omnia.Compiller
 
             program.Rule = openExpr + body | body;
 
-            simpleAssignable.Rule = identifier;
+            simpleAssignable.Rule = identifier | value + accessor | invocation + accessor;
 
             assignable.Rule = simpleAssignable;
 
@@ -61,8 +67,18 @@ namespace Omnia.Compiller
 
             value.Rule = assignable | literal;
 
+            accessor.Rule = ToTerm(".") + identifier;
+
+            argList.Rule = MakePlusRule(argList, comma, expr);
+
+            arguments.Rule = lPar + rPar
+                             | lPar + argList + rPar;
+
+            invocation.Rule = value + arguments
+                              | invocation + arguments;
+
             MarkPunctuation("=", "(", ")", ".", ",");
-            MarkTransient(line, expr, literal, alphaNumeric, value, assignable, simpleAssignable);
+            MarkTransient(line, expr, literal, alphaNumeric, value, assignable);
 
             Root = program;
         }
