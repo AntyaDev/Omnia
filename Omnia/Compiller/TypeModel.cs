@@ -1,16 +1,17 @@
-﻿using System;
+﻿using Omnia.Runtime;
+using System;
 using System.Dynamic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 
-namespace Omnia.Runtime
+namespace Omnia.Compiller
 {
     // TypeModel wraps System.Runtimetypes. When Omnia code encounters
     // a type leaf node in Globals and tries to invoke a member, wrapping
     // the ReflectionTypes in TypeModels allows member access to get the type's
     // members and not ReflectionType's members.
-    public class TypeModel : IDynamicMetaObjectProvider
+    class TypeModel : IDynamicMetaObjectProvider
     {
         public Type ReflType { get; private set; }
 
@@ -25,7 +26,7 @@ namespace Omnia.Runtime
         }
     }
 
-    public class TypeModelMetaObject : DynamicMetaObject
+    class TypeModelMetaObject : DynamicMetaObject
     {
         readonly TypeModel _typeModel;
         
@@ -44,7 +45,7 @@ namespace Omnia.Runtime
             var members = _typeModel.ReflType.GetMember(binder.Name, flags);
             if (members.Length == 1)
             {
-                return new DynamicMetaObject(Runtime.EnsureObjectResult(
+                return new DynamicMetaObject(RuntimeHelper.EnsureObjectResult(
                     // We always access static members for type model objects, so the
                     // first argument in MakeMemberAccess should be null.
                     Expression.MakeMemberAccess(null, members[0])),
@@ -89,25 +90,25 @@ namespace Omnia.Runtime
                 // for except for value args that need to pass to reftype params. 
                 // We could detect that to be smarter and then explicitly StrongBox
                 // the args.
-                var res = methodsInfo.Where(methodInfo => Runtime.ParametersMatchArguments(methodInfo.GetParameters(), args)).ToList();
+                var res = methodsInfo.Where(methodInfo => RuntimeHelper.ParametersMatchArguments(methodInfo.GetParameters(), args)).ToList();
                 if (res.Count == 0)
                 {
                     // Sometimes when binding members on TypeModels the member
                     // is an intance member since the Type is an instance of Type.
                     // We fallback to the binder with the Type instance to see if
                     // it binds.  The SymplInvokeMemberBinder does handle this.
-                    var typeMO = Runtime.GetRuntimeTypeMoFromModel(this);
+                    var typeMO = RuntimeHelper.GetRuntimeTypeMoFromModel(this);
                     var result = binder.FallbackInvokeMember(typeMO, args, null);
                     return result;
                 }
                 // True below means generate an instance restriction on the MO.
                 // We are only looking at the members defined in this Type instance.
-                var restrictions = Runtime.GetTargetArgsRestrictions(this, args, true);
+                var restrictions = RuntimeHelper.GetTargetArgsRestrictions(this, args, true);
 
                 // restrictions and conversion must be done consistently.
-                var callArgs = Runtime.ConvertArguments(args, res[0].GetParameters());
+                var callArgs = RuntimeHelper.ConvertArguments(args, res[0].GetParameters());
 
-                return new DynamicMetaObject(Runtime.EnsureObjectResult(Expression.Call(res[0], callArgs)), restrictions);
+                return new DynamicMetaObject(RuntimeHelper.EnsureObjectResult(Expression.Call(res[0], callArgs)), restrictions);
                 // Could hve tried just letting Expr.Call factory do the work,
                 // but if there is more than one applicable method using just
                 // assignablefrom, Expr.Call throws.  It does not pick a "most
@@ -119,19 +120,19 @@ namespace Omnia.Runtime
         {
             var constructors = _typeModel.ReflType.GetConstructors();
             var ctors = constructors.Where(c => c.GetParameters().Length == args.Length);
-            
-            var res = ctors.Where(c => Runtime.ParametersMatchArguments(c.GetParameters(), args)).ToList();
+
+            var res = ctors.Where(c => RuntimeHelper.ParametersMatchArguments(c.GetParameters(), args)).ToList();
             if (res.Count == 0)
             {
                 // Binders won't know what to do with TypeModels, so pass the
                 // RuntimeType they represent.  The binder might not be Sympl's.
-                return binder.FallbackCreateInstance(Runtime.GetRuntimeTypeMoFromModel(this), args);
+                return binder.FallbackCreateInstance(RuntimeHelper.GetRuntimeTypeMoFromModel(this), args);
             }
             
             // For create instance of a TypeModel, we can create a instance 
             // restriction on the MO, hence the true arg.
-            var restrictions = Runtime.GetTargetArgsRestrictions(this, args, true);
-            var ctorArgs = Runtime.ConvertArguments(args, res[0].GetParameters());
+            var restrictions = RuntimeHelper.GetTargetArgsRestrictions(this, args, true);
+            var ctorArgs = RuntimeHelper.ConvertArguments(args, res[0].GetParameters());
             
             // Creating an object, so don't need EnsureObjectResult.
             return new DynamicMetaObject(Expression.New(res[0], ctorArgs), restrictions);
