@@ -22,7 +22,7 @@ namespace Omnia.Runtime.Binding
             var members = target.LimitType.GetMember(Name, flags);
 
             return members.Length == 1
-                ? new DynamicMetaObject(Runtime.EnsureObjectResult(
+                ? new DynamicMetaObject(RuntimeHelper.EnsureObjectResult(
                     Expression.MakeMemberAccess(
                     Expression.Convert(target.Expression,
                     members[0].DeclaringType), members[0])),
@@ -31,7 +31,7 @@ namespace Omnia.Runtime.Binding
                     // only used in sites with this binder.Name.
                     BindingRestrictions.GetTypeRestriction(target.Expression, target.LimitType))
 
-                : errorSuggestion ?? Runtime.CreateThrow(target, null,
+                : errorSuggestion ?? RuntimeHelper.CreateThrow(target, null,
                         BindingRestrictions.GetTypeRestriction(target.Expression, target.LimitType),
                         typeof(MissingMemberException), "cannot bind member, " + Name + ", on object " + target.Value);
         }
