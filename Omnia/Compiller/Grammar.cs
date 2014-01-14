@@ -23,20 +23,22 @@ namespace Omnia.Compiller
             var rPar = ToTerm(")");
             var dot = ToTerm(".", "Dot");
             var comma = ToTerm(",", "Comma");
-            var open = ToTerm("open", "Open");
+
             var program = new NonTerminal("Program");
             var expr = new NonTerminal("Expr");
             var line = new NonTerminal("Line");
             var body = new NonTerminal("Body");
+
             var value = new NonTerminal("Val");
             var assign = new NonTerminal("Assign");
             var simpleAssignable = new NonTerminal("SimpleAssignable");
             var assignable = new NonTerminal("Assignable");
-            var accessor = new NonTerminal("Accessor");
+            var memberAcess = new NonTerminal("MemberAcess");
             var argList = new NonTerminal("ArgList");
             var arguments = new NonTerminal("Arguments");
-            var invocation = new NonTerminal("Invocation");
+            var functionCall = new NonTerminal("FunctionCall");
 
+            var open = ToTerm("open", "Open");
             var openExpr = new NonTerminal("OpenExpr");
             var openArg = new NonTerminal("OpenArg");
             var openList = new NonTerminal("OpenList");
@@ -45,7 +47,7 @@ namespace Omnia.Compiller
 
             literal.Rule = alphaNumeric | @bool;
 
-            expr.Rule = value | assign | invocation;
+            expr.Rule = value | assign | functionCall;
 
             line.Rule = expr + Eos;
 
@@ -59,7 +61,7 @@ namespace Omnia.Compiller
 
             program.Rule = openExpr + body | body;
 
-            simpleAssignable.Rule = identifier | value + accessor | invocation + accessor;
+            simpleAssignable.Rule = identifier | value + memberAcess | functionCall + memberAcess;
 
             assignable.Rule = simpleAssignable;
 
@@ -67,18 +69,18 @@ namespace Omnia.Compiller
 
             value.Rule = assignable | literal;
 
-            accessor.Rule = ToTerm(".") + identifier;
+            memberAcess.Rule = ToTerm(".") + identifier;
 
             argList.Rule = MakePlusRule(argList, comma, expr);
 
             arguments.Rule = lPar + rPar
                              | lPar + argList + rPar;
 
-            invocation.Rule = value + arguments
-                              | invocation + arguments;
+            functionCall.Rule = value + arguments
+                              | functionCall + arguments;
 
             MarkPunctuation("=", "(", ")", ".", ",");
-            MarkTransient(line, expr, literal, alphaNumeric, value, assignable);
+            MarkTransient(line, expr, literal, alphaNumeric, value, assignable, arguments);
 
             Root = program;
         }
@@ -86,7 +88,10 @@ namespace Omnia.Compiller
         //Make parser indentation-aware
         public override void CreateTokenFilters(LanguageData language, TokenFilterList filters)
         {
-            const OutlineOptions options = OutlineOptions.ProduceIndents | OutlineOptions.CheckBraces | OutlineOptions.CheckOperator;
+            const OutlineOptions options = OutlineOptions.ProduceIndents 
+                                           | OutlineOptions.CheckBraces 
+                                           | OutlineOptions.CheckOperator;
+
             var outlineFilter = new CodeOutlineFilter(language.GrammarData, options, null);
             filters.Add(outlineFilter);
         }

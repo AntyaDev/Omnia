@@ -7,5 +7,5 @@ uuid: cb9ea325-65a2-471e-8c20-71a6840d7306
 
 patterns:
 - name: keyword.Omnia
-  match: string|bool|number
+  match: open|string|bool|number
 ...
