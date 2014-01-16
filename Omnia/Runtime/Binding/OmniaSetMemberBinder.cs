@@ -35,7 +35,7 @@ namespace Omnia.Runtime.Binding
                 else if (memberInfo.MemberType == MemberTypes.Field)
                     val = Expression.Convert(value.Expression, ((FieldInfo)memberInfo).FieldType);
                 
-                else return (errorSuggestion ?? Runtime.CreateThrow(
+                else return (errorSuggestion ?? RuntimeHelper.CreateThrow(
                                 target, null,
                                 BindingRestrictions.GetTypeRestriction(
                                     target.Expression,
@@ -45,7 +45,7 @@ namespace Omnia.Runtime.Binding
 
                 return new DynamicMetaObject(
                     // Assign returns the stored value, so we're good for Omnia.
-                    Runtime.EnsureObjectResult(
+                    RuntimeHelper.EnsureObjectResult(
                     Expression.Assign(
                     Expression.MakeMemberAccess(
                     Expression.Convert(target.Expression, members[0].DeclaringType), members[0]), val)),
@@ -56,7 +56,7 @@ namespace Omnia.Runtime.Binding
             }
             else
             {
-                return errorSuggestion ?? Runtime.CreateThrow(target, null,
+                return errorSuggestion ?? RuntimeHelper.CreateThrow(target, null,
                     BindingRestrictions.GetTypeRestriction(target.Expression, target.LimitType),
                     typeof(MissingMemberException), "IDynObj member name conflict.");
             }
