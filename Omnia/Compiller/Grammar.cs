@@ -23,11 +23,13 @@ namespace Omnia.Compiller
             var rPar = ToTerm(")");
             var dot = ToTerm(".", "Dot");
             var comma = ToTerm(",", "Comma");
+            var funcGlyph = ToTerm("->");
 
             var program = new NonTerminal("Program");
             var expr = new NonTerminal("Expr");
             var line = new NonTerminal("Line");
             var body = new NonTerminal("Body");
+            var block = new NonTerminal("Block");
 
             var value = new NonTerminal("Val");
             var assign = new NonTerminal("Assign");
@@ -37,6 +39,9 @@ namespace Omnia.Compiller
             var argList = new NonTerminal("ArgList");
             var arguments = new NonTerminal("Arguments");
             var functionCall = new NonTerminal("FunctionCall");
+            var param = new NonTerminal("Param");
+            var paramList = new NonTerminal("ParamList");
+            var functionDef = new NonTerminal("FunctionDef");
 
             var open = ToTerm("open", "Open");
             var openExpr = new NonTerminal("OpenExpr");
@@ -47,11 +52,13 @@ namespace Omnia.Compiller
 
             literal.Rule = alphaNumeric | @bool;
 
-            expr.Rule = value | assign | functionCall;
+            expr.Rule = value | assign | functionCall | functionDef;
 
             line.Rule = expr + Eos;
 
             body.Rule = MakePlusRule(body, line);
+
+            block.Rule = Indent + body + Dedent;
 
             openExpr.Rule = open + PreferShiftHere() + "(" + openList + ")" + Eos;
             
@@ -65,7 +72,7 @@ namespace Omnia.Compiller
 
             assignable.Rule = simpleAssignable;
 
-            assign.Rule = (assignable + "=" + expr);
+            assign.Rule = (assignable + "=" + expr) | (assignable + "=" + Indent + expr + Dedent);
 
             value.Rule = assignable | literal;
 
@@ -78,6 +85,12 @@ namespace Omnia.Compiller
 
             functionCall.Rule = value + arguments
                               | functionCall + arguments;
+
+            param.Rule = identifier | (identifier + "=" + expr);
+
+            paramList.Rule = MakePlusRule(paramList, comma, param);
+
+            functionDef.Rule = (lPar + paramList + rPar + funcGlyph + Eos + block);// | (funcGlyph + block);
 
             MarkPunctuation("=", "(", ")", ".", ",");
             MarkTransient(line, expr, literal, alphaNumeric, value, assignable, arguments);
