@@ -1,207 +1,107 @@
-﻿using System;
+﻿using Irony.Parsing;
+using Omnia.Compiller;
+using Omnia.Runtime.Binding;
+using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Dynamic;
-using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using Omnia.Runtime.Binding;
+using Parser = Omnia.Compiller.Parser;
 
 namespace Omnia.Runtime
 {
     class Runtime
     {
+        readonly Parser _parser;
+        readonly ETGenerator _etGenerator;
         readonly IEnumerable<Assembly> _assemblies;
-        readonly static Dictionary<string, CallSite<Func<CallSite, object, object>>> _getSites = new Dictionary<string, CallSite<Func<CallSite, object, object>>>();
-        readonly static Dictionary<string, CallSite<Action<CallSite, object, object>>> _setSites = new Dictionary<string, CallSite<Action<CallSite, object, object>>>();
+        readonly Dictionary<string, CallSite<Func<CallSite, object, object>>> _getSites = new Dictionary<string, CallSite<Func<CallSite, object, object>>>();
+        readonly Dictionary<string, CallSite<Action<CallSite, object, object>>> _setSites = new Dictionary<string, CallSite<Action<CallSite, object, object>>>();
+        readonly Dictionary<string, OmniaSetMemberBinder> _setMemberBinders = new Dictionary<string, OmniaSetMemberBinder>();
+        readonly Dictionary<string, OmniaGetMemberBinder> _getMemberBinders = new Dictionary<string, OmniaGetMemberBinder>();
+        readonly Dictionary<InvokeMemberBinderKey, OmniaInvokeMemberBinder> _invokeMemberBinders = new Dictionary<InvokeMemberBinderKey, OmniaInvokeMemberBinder>();
 
         public ExpandoObject Globals { get; private set; }
-        public static object Sentinel { get; private set; }
 
-        public Runtime(IEnumerable<Assembly> assemblies)
+        public Runtime(Parser parser, ETGenerator etGenerator, IEnumerable<Assembly> assemblies)
         {
+            _parser = parser;
+            _etGenerator = etGenerator;
             _assemblies = assemblies;
             Globals = new ExpandoObject();
-            Sentinel = new object();
             AddAssemblyNamesAndTypes();
         }
 
-        // EnsureObjectResult wraps expr if necessary so that any binder or
-        // DynamicMetaObject result expression returns object.  This is required
-        // by CallSites.
-        public static Expression EnsureObjectResult(Expression expr)
+        public object ExecuteExpression(string expression)
         {
-            if (!expr.Type.IsValueType) return expr;
-            
-            if (expr.Type == typeof(void)) return Expression.Block(expr, Expression.Default(typeof(object)));
-            
-            return Expression.Convert(expr, typeof(object));
+            var ast = _parser.Parse(expression);
+
+            if (ast.Status != ParseTreeStatus.Parsed) throw new InvalidOperationException();
+
+            var scope = new AnalysisScope(
+                null,
+                "omnia_snippet",
+                Expression.Parameter(typeof(Runtime), "OmniaRuntime"),
+                Expression.Parameter(typeof(ExpandoObject), "OmniaSnippetModule"),
+                this);
+
+            var dlrAst = Expression.Block(_etGenerator.GenerateDLRAst(ast, scope));
+
+            var dlrExpr = Expression.Lambda<Func<Runtime, ExpandoObject, object>>(
+                dlrAst,
+                scope.RuntimeExpr,
+                scope.ModuleExpr).Compile();
+
+            return dlrExpr(this, new ExpandoObject());
         }
 
-        // CreateThrow is a convenience function for when binders cannot bind.
-        // They need to return a DynamicMetaObject with appropriate restrictions
-        // that throws.  Binders never just throw due to the protocol since
-        // a binder or MO down the line may provide an implementation.
-        //
-        // It returns a DynamicMetaObject whose expr throws the exception, and 
-        // ensures the expr's type is object to satisfy the CallSite return type
-        // constraint.
-        //
-        // A couple of calls to CreateThrow already have the args and target
-        // restrictions merged in, but BindingRestrictions.Merge doesn't add 
-        // duplicates.
-        public static DynamicMetaObject CreateThrow(DynamicMetaObject target, DynamicMetaObject[] args,
-                                                    BindingRestrictions moreTests, Type exception,
-                                                    params object[] exceptionArgs)
+        public object OpenModules(Runtime runtime, ExpandoObject module, string[] modulesNames)
         {
-            Expression[] argExprs = null;
-            var argTypes = Type.EmptyTypes;
-            if (exceptionArgs != null)
+            foreach (var moduleName in modulesNames)
             {
-                int i = exceptionArgs.Length;
-                argExprs = new Expression[i];
-                argTypes = new Type[i];
-                i = 0;
-                foreach (object o in exceptionArgs)
+                if (HasSite(runtime.Globals, moduleName))
                 {
-                    Expression e = Expression.Constant(o);
-                    argExprs[i] = e;
-                    argTypes[i] = e.Type;
-                    i++;
+                    var value = GetSite(runtime.Globals, moduleName);
+                    SetSite(module, moduleName, value);
                 }
             }
-
-            var constructor = exception.GetConstructor(argTypes);
-            
-            if (constructor == null) throw new ArgumentException("Type doesn't have constructor with a given signature");
-            
-            return new DynamicMetaObject(
-                Expression.Throw(
-                Expression.New(constructor, argExprs),
-                // Force expression to be type object so that DLR CallSite
-                // code things only type object flows out of the CallSite.
-                typeof(object)),
-                target.Restrictions.Merge(BindingRestrictions.Combine(args)).Merge(moreTests));
+            return null;
         }
 
-        // ParamsMatchArgs returns whether the args are assignable to the parameters.
-        // We specially check for our TypeModel that wraps .NET's RuntimeType, and
-        // elsewhere we detect the same situation to convert the TypeModel for calls.
-        //
-        // Consider checking p.IsByRef and returning false since that's not CLS.
-        //
-        // Could check for a.HasValue and a.Value is None and
-        // ((paramtype is class or interface) or (paramtype is generic and
-        // nullable<t>)) to support passing nil anywhere.
-        public static bool ParametersMatchArguments(ParameterInfo[] parameters, DynamicMetaObject[] args)
+        public OmniaInvokeMemberBinder GetInvokeMemberBinder(InvokeMemberBinderKey key)
         {
-            // We only call this after filtering members by this constraint.
-            Debug.Assert(args.Length == parameters.Length, "Internal: args are not same len as params.");
-            for (int i = 0; i < args.Length; i++)
-            {
-                var paramType = parameters[i].ParameterType;
-
-                // We consider arg of TypeModel and param of Type to be compatible.
-                if (paramType == typeof(Type) && (args[i].LimitType == typeof(TypeModel))) continue;
-
-                // Could check for HasValue and Value==null AND
-                // (paramtype is class or interface) or (is generic
-                // and nullable<T>) ... to bind nullables and null.
-                if (!paramType.IsAssignableFrom(args[i].LimitType)) return false;
-            }
-            return true;
+            return _invokeMemberBinders.ContainsKey(key)
+                ? _invokeMemberBinders[key]
+                : _invokeMemberBinders[key] = new OmniaInvokeMemberBinder(key.Name, key.Info);
         }
 
-        // Returns a DynamicMetaObject with an expression that fishes the .NET
-        // RuntimeType object from the TypeModel MO.
-        public static DynamicMetaObject GetRuntimeTypeMoFromModel(DynamicMetaObject typeModel)
+        public OmniaSetMemberBinder GetSetMemberBinder(string name)
         {
-            Debug.Assert((typeModel.LimitType == typeof(TypeModel)), "Internal: MO is not a TypeModel?!");
-            
-            var pi = typeof(TypeModel).GetProperty("ReflType");
-            Debug.Assert(pi != null);
-
-            return new DynamicMetaObject(
-                Expression.Property(
-                Expression.Convert(typeModel.Expression, typeof (TypeModel)), pi),
-                typeModel.Restrictions.Merge(BindingRestrictions.GetTypeRestriction(typeModel.Expression, typeof (TypeModel))));
-
-            // Must supply a value to prevent binder FallbackXXX methods
-            // from infinitely looping if they do not check this MO for
-            // HasValue == false and call Defer.  After Omnia added Defer
-            // checks, we could verify, say, FallbackInvokeMember by no
-            // longer passing a value here.
-            //((TypeModel)typeModel.Value).ReflType
+            return _setMemberBinders.ContainsKey(name)
+                ? _setMemberBinders[name]
+                : _setMemberBinders[name] = new OmniaSetMemberBinder(name);
         }
 
-        // GetTargetArgsRestrictions generates the restrictions needed for the
-        // MO resulting from binding an operation. This combines all existing
-        // restrictions and adds some for arg conversions. targetInst indicates
-        // whether to restrict the target to an instance (for operations on type
-        // objects) or to a type (for operations on an instance of that type).
-        //
-        // NOTE, this function should only be used when the caller is converting
-        // arguments to the same types as these restrictions.
-        public static BindingRestrictions GetTargetArgsRestrictions(DynamicMetaObject target, DynamicMetaObject[] args,
-                                                                    bool instanceRestrictionOnTarget)
+        public OmniaGetMemberBinder GetGetMemberBinder(string name)
         {
-            // Important to add existing restriction first because the
-            // DynamicMetaObjects (and possibly values) we're looking at depend
-            // on the pre-existing restrictions holding true.
-            var restrictions = target.Restrictions.Merge(BindingRestrictions .Combine(args));
-            
-            restrictions = restrictions.Merge(instanceRestrictionOnTarget
-                ? BindingRestrictions.GetInstanceRestriction(target.Expression, target.Value)
-                : BindingRestrictions.GetTypeRestriction(target.Expression, target.LimitType));
-
-            return args.Select(arg => arg.HasValue && arg.Value == null 
-                               ? BindingRestrictions.GetInstanceRestriction(arg.Expression, null) 
-                               : BindingRestrictions.GetTypeRestriction(arg.Expression, arg.LimitType))
-                        .Aggregate(restrictions, (current, restriction) => current.Merge(restriction));
+            return _getMemberBinders.ContainsKey(name)
+                ? _getMemberBinders[name]
+                : _getMemberBinders[name] = new OmniaGetMemberBinder(name);
         }
 
-        // Returns list of Convert exprs converting args to param types.  If an arg
-        // is a TypeModel, then we treat it special to perform the binding.  We need
-        // to map from our runtime model to .NET's RuntimeType object to match.
-        //
-        // To call this function, args and pinfos must be the same length, and param
-        // types must be assignable from args.
-        //
-        // NOTE, if using this function, then need to use GetTargetArgsRestrictions
-        // and make sure you're performing the same conversions as restrictions.
-        //
-        public static Expression[] ConvertArguments(DynamicMetaObject[] args, ParameterInfo[] ps)
-        {
-            Debug.Assert(args.Length == ps.Length, "Internal: args are not same len as params?!");
-
-            var callArgs = new Expression[args.Length];
-            for (int i = 0; i < args.Length; i++)
-            {
-                var argExpr = args[i].Expression;
-
-                if (args[i].LimitType == typeof(TypeModel) && ps[i].ParameterType == typeof(Type))
-                {
-                    argExpr = GetRuntimeTypeMoFromModel(args[i]).Expression;
-                }
-                argExpr = Expression.Convert(argExpr, ps[i].ParameterType);
-                callArgs[i] = argExpr;
-            }
-            return callArgs;
-        }
-
-        static object GetMember(IDynamicMetaObjectProvider metaObject, string name)
+        object GetSite(IDynamicMetaObjectProvider metaObject, string name)
         {
             CallSite<Func<CallSite, object, object>> site;
             if (!_getSites.TryGetValue(name, out site))
             {
-                site = CallSite<Func<CallSite, object, object>>.Create(new OmniaGetMemberBinder(name));
+                site = CallSite<Func<CallSite, object, object>>.Create(new HelperGetMemberBinder(name));
                 _getSites[name] = site;
             }
             return site.Target(site, metaObject);
         }
 
-        static void SetMember(IDynamicMetaObjectProvider metaObject, string name, object value)
+        void SetSite(IDynamicMetaObjectProvider metaObject, string name, object value)
         {
             CallSite<Action<CallSite, object, object>> site;
             if (!_setSites.TryGetValue(name, out site))
@@ -212,9 +112,9 @@ namespace Omnia.Runtime
             site.Target(site, metaObject, value);
         }
 
-        static bool HasMember(IDynamicMetaObjectProvider metaObject, string name)
+        bool HasSite(IDynamicMetaObjectProvider metaObject, string name)
         {
-            return GetMember(metaObject, name) != Sentinel;
+            return GetSite(metaObject, name) != RuntimeHelper.Sentinel;
         }
 
         // AddAssemblyNamesAndTypes() builds a tree of ExpandoObjects representing
@@ -233,20 +133,20 @@ namespace Omnia.Runtime
                     var table = Globals;
                     for (int i = 0; i < names.Length - 1; i++)
                     {
-                        string name = names[i].ToLower();
-                        if (HasMember(table, name))
+                        string name = names[i];
+                        if (HasSite(table, name))
                         {
                             // Must be Expando since only we have put objs in the tables so far.
-                            table = (ExpandoObject)(GetMember(table, name));
+                            table = (ExpandoObject)(GetSite(table, name));
                         }
                         else
                         {
                             var tmp = new ExpandoObject();
-                            SetMember(table, name, tmp);
+                            SetSite(table, name, tmp);
                             table = tmp;
                         }
                     }
-                    SetMember(table, names[names.Length - 1], new TypeModel(typ));
+                    SetSite(table, names[names.Length - 1], new TypeModel(typ));
                 }
             }
         }
