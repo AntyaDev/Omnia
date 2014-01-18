@@ -90,7 +90,8 @@ namespace Omnia.Compiller
 
             paramList.Rule = MakePlusRule(paramList, comma, param);
 
-            functionDef.Rule = (lPar + paramList + rPar + funcGlyph + Eos + block);// | (funcGlyph + block);
+            functionDef.Rule = (lPar + paramList + rPar + funcGlyph + Eos + block + expr)
+                               | (lPar + paramList + rPar + funcGlyph + expr);
 
             MarkPunctuation("=", "(", ")", ".", ",");
             MarkTransient(line, expr, literal, alphaNumeric, value, assignable, arguments);
