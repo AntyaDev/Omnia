@@ -42,8 +42,21 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Compiller\ETGenerator.cs" />
     <Compile Include="Compiller\Grammar.cs" />
+    <Compile Include="Compiller\Parser.cs" />
+    <Compile Include="OmniaContext.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Runtime\Binding\HelperGetMemberBinder.cs" />
+    <Compile Include="Runtime\Binding\InvokeMemberBinderKey.cs" />
+    <Compile Include="Runtime\Binding\OmniaGetMemberBinder.cs" />
+    <Compile Include="Runtime\Binding\OmniaInvokeBinder.cs" />
+    <Compile Include="Runtime\Binding\OmniaInvokeMemberBinder.cs" />
+    <Compile Include="Runtime\Binding\OmniaSetMemberBinder.cs" />
+    <Compile Include="Runtime\Runtime.cs" />
+    <Compile Include="Compiller\AnalysisScope.cs" />
+    <Compile Include="Compiller\TypeModel.cs" />
+    <Compile Include="Runtime\RuntimeHelper.cs" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
