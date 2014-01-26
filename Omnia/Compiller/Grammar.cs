@@ -24,6 +24,8 @@ namespace Omnia.Compiller
             var dot = ToTerm(".", "Dot");
             var comma = ToTerm(",", "Comma");
             var funcGlyph = ToTerm("->");
+            var binaryOperator = new NonTerminal("BinaryOperator");
+            var binaryExpr = new NonTerminal("BinaryExpr");
 
             var program = new NonTerminal("Program");
             var expr = new NonTerminal("Expr");
@@ -52,13 +54,17 @@ namespace Omnia.Compiller
 
             literal.Rule = alphaNumeric | @bool;
 
-            expr.Rule = value | assign | functionCall | functionDef;
+            expr.Rule = value | assign | functionCall | functionDef | binaryExpr;
 
             line.Rule = expr + Eos;
 
             body.Rule = MakePlusRule(body, line);
 
             block.Rule = Indent + body + Dedent;
+
+            binaryOperator.Rule = ToTerm("+") | "-" | "*" | "/";
+
+            binaryExpr.Rule = value + binaryOperator + value;
 
             openExpr.Rule = open + PreferShiftHere() + "(" + openList + ")" + Eos;
             
