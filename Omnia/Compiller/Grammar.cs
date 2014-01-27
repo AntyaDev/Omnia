@@ -43,7 +43,7 @@ namespace Omnia.Compiller
             var functionCall = new NonTerminal("FunctionCall");
             var param = new NonTerminal("Param");
             var paramList = new NonTerminal("ParamList");
-            var functionDef = new NonTerminal("FunctionDef");
+            var lambdaDef = new NonTerminal("LambdaDef");
 
             var open = ToTerm("open", "Open");
             var openExpr = new NonTerminal("OpenExpr");
@@ -54,7 +54,7 @@ namespace Omnia.Compiller
 
             literal.Rule = alphaNumeric | @bool;
 
-            expr.Rule = value | assign | functionCall | functionDef | binaryExpr;
+            expr.Rule = value | assign | functionCall | lambdaDef | binaryExpr;
 
             line.Rule = expr + Eos;
 
@@ -96,7 +96,7 @@ namespace Omnia.Compiller
 
             paramList.Rule = MakePlusRule(paramList, comma, param);
 
-            functionDef.Rule = (lPar + paramList + rPar + funcGlyph + Eos + block + expr)
+            lambdaDef.Rule = (lPar + paramList + rPar + funcGlyph + Eos + block + expr)
                                | (lPar + paramList + rPar + funcGlyph + expr);
 
             MarkPunctuation("=", "(", ")", ".", ",");
