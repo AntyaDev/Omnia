@@ -8,11 +8,13 @@ namespace Omnia.Compiller.Ast
 
     enum ExprType
     {
-        Argument,
+        ParamExpr,
+        Arg,
         FunctionalCall,
         Lambda,
         Literal,
         Open,
-        Assign
+        Assign,
+        Id
     }
 }
