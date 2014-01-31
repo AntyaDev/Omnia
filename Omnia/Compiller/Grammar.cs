@@ -56,7 +56,7 @@ namespace Omnia.Compiller
 
             expr.Rule = value | assign | functionCall | lambdaDef | binaryExpr;
 
-            line.Rule = expr + Eos;
+            line.Rule = expr + Eos | expr;
 
             body.Rule = MakePlusRule(body, line);
 
@@ -66,7 +66,7 @@ namespace Omnia.Compiller
 
             binaryExpr.Rule = value + binaryOperator + value;
 
-            openExpr.Rule = open + PreferShiftHere() + "(" + openList + ")" + Eos;
+            openExpr.Rule = open + "(" + openList + ")" + Eos;
             
             openArg.Rule = MakePlusRule(openArg, dot, identifier);
 
@@ -74,11 +74,14 @@ namespace Omnia.Compiller
 
             program.Rule = openExpr + body | body;
 
-            simpleAssignable.Rule = identifier | value + memberAcess | functionCall + memberAcess;
+            simpleAssignable.Rule = identifier
+                                    | value + memberAcess
+                                    | functionCall + memberAcess;
 
             assignable.Rule = simpleAssignable;
 
-            assign.Rule = (assignable + "=" + expr) | (assignable + "=" + Indent + expr + Dedent);
+            assign.Rule = (assignable + "=" + expr)
+                          | (assignable + "=" + Indent + expr + Dedent);
 
             value.Rule = assignable | literal;
 
@@ -86,21 +89,19 @@ namespace Omnia.Compiller
 
             argList.Rule = MakePlusRule(argList, comma, expr);
 
-            arguments.Rule = lPar + rPar
-                             | lPar + argList + rPar;
+            arguments.Rule = lPar + rPar | lPar + argList + rPar;
 
-            functionCall.Rule = value + arguments
-                              | functionCall + arguments;
+            functionCall.Rule = value + arguments | functionCall + arguments;
 
             param.Rule = identifier | (identifier + "=" + expr);
 
             paramList.Rule = MakePlusRule(paramList, comma, param);
 
-            lambdaDef.Rule = (lPar + paramList + rPar + funcGlyph + Eos + block + expr)
-                               | (lPar + paramList + rPar + funcGlyph + expr);
+            lambdaDef.Rule = (lPar + paramList + rPar + funcGlyph + Eos + block)
+                             | (lPar + paramList + rPar + funcGlyph + expr);
 
             MarkPunctuation("=", "(", ")", ".", ",");
-            MarkTransient(line, expr, literal, alphaNumeric, value, assignable, arguments);
+            MarkTransient(line, expr, literal, alphaNumeric, value, assignable, arguments, block);
 
             Root = program;
         }
