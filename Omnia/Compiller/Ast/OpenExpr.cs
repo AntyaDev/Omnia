@@ -2,13 +2,14 @@
 
 namespace Omnia.Compiller.Ast
 {
-    class OpenExpr
+    class OpenExpr : Expr
     {
-        public IEnumerable<string> OpenList { get; private set; }
+        public override ExprType ExprType { get { return ExprType.Open; } }
+        public IEnumerable<string> Modules { get; private set; }
 
-        public OpenExpr(IEnumerable<string> openList)
+        public OpenExpr(IEnumerable<string> modules)
         {
-            OpenList = openList;
+            Modules = modules;
         }
     }
 }
