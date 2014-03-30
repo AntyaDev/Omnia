@@ -17,10 +17,18 @@ namespace Omnia.Compiller
             // so we add it to this list to let Scanner know that it is also a valid terminal. 
             NonGrammarTerminals.Add(comment);
             var comma = ToTerm(",");
+            var dot = ToTerm(".");
             var colon = ToTerm(":");
             var funcGlyph = ToTerm("->");
+            var fun = ToTerm("fun");
+            var open = ToTerm("open");
 
             // 2. Non-terminals
+
+            var OpenExpr = new NonTerminal("OpenExpr");
+            var OpenArg = new NonTerminal("OpenArg");
+            var OpenArgList = new NonTerminal("OpenArgList");
+
             var Expr = new NonTerminal("Expr");
             var Term = new NonTerminal("Term");
             var BinExpr = new NonTerminal("BinExpr");
@@ -34,6 +42,7 @@ namespace Omnia.Compiller
             var ReturnStmt = new NonTerminal("return");
             var Block = new NonTerminal("Block");
             var StmtList = new NonTerminal("StmtList");
+            var Program = new NonTerminal("Program");
 
             var ParamList = new NonTerminal("ParamList");
             var ArgList = new NonTerminal("ArgList");
@@ -44,6 +53,10 @@ namespace Omnia.Compiller
             var FunctionCall = new NonTerminal("FunctionCall");
             
             // 3. BNF rules
+            OpenExpr.Rule = open + "(" + OpenArgList + ")" + Eos;
+            OpenArg.Rule = MakeListRule(OpenArg, dot, identifier);
+            OpenArgList.Rule = MakeListRule(OpenArgList, comma, OpenArg);
+
             Expr.Rule = Term | UnExpr | BinExpr;
             Term.Rule = number | identifier | FunctionCall;
             UnExpr.Rule = UnOp + Term;
@@ -57,11 +70,12 @@ namespace Omnia.Compiller
             ExtStmt.Rule = FunctionDef | Stmt + Eos;
             StmtList.Rule = MakePlusRule(StmtList, ExtStmt);
             Block.Rule = Indent + StmtList + Dedent;
+            Program.Rule = OpenExpr | OpenExpr + StmtList;
 
             ParamList.Rule = MakeStarRule(ParamList, comma, identifier);
             
             Arg.Rule = Expr | LamdaArg;
-            LamdaArg.Rule = "fun" + LamdaDef;
+            LamdaArg.Rule = fun + LamdaDef;
             ArgList.Rule = MakeStarRule(ArgList, comma, Arg);
             
             LamdaDef.Rule = "(" + ParamList + ")" + funcGlyph + Eos + Block
@@ -71,7 +85,7 @@ namespace Omnia.Compiller
 
             FunctionCall.Rule = identifier + "(" + ArgList + ")";
 
-            Root = StmtList;       // Set grammar root
+            Root = Program;       // Set grammar root
 
             // 4. Token filters - created in a separate method CreateTokenFilters
             //    we need to add continuation symbol to NonGrammarTerminals because it is not used anywhere in grammar
@@ -85,7 +99,7 @@ namespace Omnia.Compiller
             // 6. Miscellaneous: punctuation, braces, transient nodes
             MarkPunctuation("(", ")", ":");
             RegisterBracePair("(", ")");
-            MarkTransient(Term, Expr, Stmt, ExtStmt, UnOp, BinOp, ExtStmt, Block);
+            //MarkTransient(Term, Expr, Stmt, ExtStmt, UnOp, BinOp, ExtStmt, Block);
 
             // 7. Error recovery rule
             ExtStmt.ErrorRule = SyntaxError + Eos;
