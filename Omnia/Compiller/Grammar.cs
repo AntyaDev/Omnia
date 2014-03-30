@@ -7,103 +7,97 @@ namespace Omnia.Compiller
     {
         public Grammar() : base(caseSensitive: true)
         {
-            var identifier = TerminalFactory.CreateCSharpIdentifier("Identifier");
+            // ReSharper disable InconsistentNaming
+
+            // 1. Terminals
             var number = TerminalFactory.CreateCSharpNumber("Number");
-            var @string = TerminalFactory.CreateCSharpString("String");
-            var @char = TerminalFactory.CreateCSharpChar("Char");
-            var @bool = ToTerm("true") | "false";
-            var alphaNumeric = new NonTerminal("AlphaNumeric");
-            var literal = new NonTerminal("Literal");
-            var singleLineComment = new CommentTerminal("SingleLineComment", "//", "\r", "\n", "\u2085", "\u2028", "\u2029");
-            var delimitedComment = new CommentTerminal("DelimitedComment", "/*", "*/");
-            NonGrammarTerminals.Add(singleLineComment);
-            NonGrammarTerminals.Add(delimitedComment);
-
-            var lPar = ToTerm("(");
-            var rPar = ToTerm(")");
-            var dot = ToTerm(".", "Dot");
-            var comma = ToTerm(",", "Comma");
+            var identifier = TerminalFactory.CreatePythonIdentifier("Identifier");
+            var comment = new CommentTerminal("Comment", "#", "\n", "\r");
+            //comment must to be added to NonGrammarTerminals list; it is not used directly in grammar rules,
+            // so we add it to this list to let Scanner know that it is also a valid terminal. 
+            NonGrammarTerminals.Add(comment);
+            var comma = ToTerm(",");
+            var colon = ToTerm(":");
             var funcGlyph = ToTerm("->");
-            var binaryOperator = new NonTerminal("BinaryOperator");
-            var binaryExpr = new NonTerminal("BinaryExpr");
 
-            var program = new NonTerminal("Program");
-            var expr = new NonTerminal("Expr");
-            var line = new NonTerminal("Line");
-            var body = new NonTerminal("Body");
-            var block = new NonTerminal("Block");
+            // 2. Non-terminals
+            var Expr = new NonTerminal("Expr");
+            var Term = new NonTerminal("Term");
+            var BinExpr = new NonTerminal("BinExpr");
+            var UnExpr = new NonTerminal("UnExpr");
+            var UnOp = new NonTerminal("UnOp", "operator");
+            var BinOp = new NonTerminal("BinOp", "operator");
+            var AssignmentStmt = new NonTerminal("AssignmentStmt");
+            var Stmt = new NonTerminal("Stmt");
+            var ExtStmt = new NonTerminal("ExtStmt");
+            //Just as a test for NotSupportedNode
+            var ReturnStmt = new NonTerminal("return");
+            var Block = new NonTerminal("Block");
+            var StmtList = new NonTerminal("StmtList");
 
-            var value = new NonTerminal("Val");
-            var assign = new NonTerminal("Assign");
-            var simpleAssignable = new NonTerminal("SimpleAssignable");
-            var assignable = new NonTerminal("Assignable");
-            var memberAcess = new NonTerminal("MemberAcess");
-            var argList = new NonTerminal("ArgList");
-            var arguments = new NonTerminal("Arguments");
-            var functionCall = new NonTerminal("FunctionCall");
-            var param = new NonTerminal("Param");
-            var paramList = new NonTerminal("ParamList");
-            var lambdaDef = new NonTerminal("LambdaDef");
-
-            var open = ToTerm("open", "Open");
-            var openExpr = new NonTerminal("OpenExpr");
-            var openArg = new NonTerminal("OpenArg");
-            var openList = new NonTerminal("OpenList");
+            var ParamList = new NonTerminal("ParamList");
+            var ArgList = new NonTerminal("ArgList");
+            var Arg = new NonTerminal("Arg");
+            var FunctionDef = new NonTerminal("FunctionDef");
+            var LamdaDef = new NonTerminal("LamdaDef");
+            var LamdaArg = new NonTerminal("LamdaArg");
+            var FunctionCall = new NonTerminal("FunctionCall");
             
-            alphaNumeric.Rule = number | @string | @char;
-
-            literal.Rule = alphaNumeric | @bool;
-
-            expr.Rule = value | assign | functionCall | lambdaDef | binaryExpr;
-
-            line.Rule = expr + Eos | expr;
-
-            body.Rule = MakePlusRule(body, line);
-
-            block.Rule = Indent + body + Dedent;
-
-            binaryOperator.Rule = ToTerm("+") | "-" | "*" | "/";
-
-            binaryExpr.Rule = value + binaryOperator + value;
-
-            openExpr.Rule = open + "(" + openList + ")" + Eos;
+            // 3. BNF rules
+            Expr.Rule = Term | UnExpr | BinExpr;
+            Term.Rule = number | identifier | FunctionCall;
+            UnExpr.Rule = UnOp + Term;
+            UnOp.Rule = ToTerm("+") | "-";
+            BinExpr.Rule = Expr + BinOp + Expr;
+            BinOp.Rule = ToTerm("+") | "-" | "*" | "/" | "**";
             
-            openArg.Rule = MakePlusRule(openArg, dot, identifier);
+            AssignmentStmt.Rule = identifier + "=" + Expr;
+            Stmt.Rule = AssignmentStmt | Expr | ReturnStmt | Empty;
+            ReturnStmt.Rule = "return" + Expr;
+            ExtStmt.Rule = FunctionDef | Stmt + Eos;
+            StmtList.Rule = MakePlusRule(StmtList, ExtStmt);
+            Block.Rule = Indent + StmtList + Dedent;
 
-            openList.Rule = MakeStarRule(openList, comma, openArg);
+            ParamList.Rule = MakeStarRule(ParamList, comma, identifier);
+            
+            Arg.Rule = Expr | LamdaArg;
+            LamdaArg.Rule = "fun" + LamdaDef;
+            ArgList.Rule = MakeStarRule(ArgList, comma, Arg);
+            
+            LamdaDef.Rule = "(" + ParamList + ")" + funcGlyph + Eos + Block
+                            | "(" + ParamList + ")" + funcGlyph + Expr;
 
-            program.Rule = openExpr + body | body;
+            FunctionDef.Rule = identifier + "=" + LamdaDef;
 
-            simpleAssignable.Rule = identifier
-                                    | value + memberAcess
-                                    | functionCall + memberAcess;
+            FunctionCall.Rule = identifier + "(" + ArgList + ")";
 
-            assignable.Rule = simpleAssignable;
+            Root = StmtList;       // Set grammar root
 
-            assign.Rule = (assignable + "=" + expr)
-                          | (assignable + "=" + Indent + expr + Dedent);
+            // 4. Token filters - created in a separate method CreateTokenFilters
+            //    we need to add continuation symbol to NonGrammarTerminals because it is not used anywhere in grammar
+            NonGrammarTerminals.Add(ToTerm(@"\"));
 
-            value.Rule = assignable | literal;
+            // 5. Operators precedence
+            RegisterOperators(1, "+", "-");
+            RegisterOperators(2, "*", "/");
+            RegisterOperators(3, Associativity.Right, "**");
 
-            memberAcess.Rule = ToTerm(".") + identifier;
+            // 6. Miscellaneous: punctuation, braces, transient nodes
+            MarkPunctuation("(", ")", ":");
+            RegisterBracePair("(", ")");
+            MarkTransient(Term, Expr, Stmt, ExtStmt, UnOp, BinOp, ExtStmt, Block);
 
-            argList.Rule = MakePlusRule(argList, comma, expr);
+            // 7. Error recovery rule
+            ExtStmt.ErrorRule = SyntaxError + Eos;
+            FunctionDef.ErrorRule = SyntaxError + Dedent;
 
-            arguments.Rule = lPar + rPar | lPar + argList + rPar;
+            // 8. Syntax error reporting
+            AddToNoReportGroup("(");
+            AddToNoReportGroup(Eos);
+            AddOperatorReportGroup("operator");
 
-            functionCall.Rule = value + arguments | functionCall + arguments;
-
-            param.Rule = identifier | (identifier + "=" + expr);
-
-            paramList.Rule = MakePlusRule(paramList, comma, param);
-
-            lambdaDef.Rule = (lPar + paramList + rPar + funcGlyph + Eos + block)
-                             | (lPar + paramList + rPar + funcGlyph + expr);
-
-            MarkPunctuation("=", "(", ")", ".", ",");
-            MarkTransient(line, expr, literal, alphaNumeric, value, assignable, arguments, block);
-
-            Root = program;
+            // 10. Language flags
+            LanguageFlags = LanguageFlags.NewLineBeforeEOF;
         }
 
         //Make parser indentation-aware
