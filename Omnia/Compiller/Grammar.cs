@@ -11,7 +11,7 @@ namespace Omnia.Compiller
 
             // 1. Terminals
             var number = TerminalFactory.CreateCSharpNumber("Number");
-            var identifier = TerminalFactory.CreatePythonIdentifier("Identifier");
+            var identifier = TerminalFactory.CreateCSharpIdentifier("Identifier");
             var comment = new CommentTerminal("Comment", "#", "\n", "\r");
             //comment must to be added to NonGrammarTerminals list; it is not used directly in grammar rules,
             // so we add it to this list to let Scanner know that it is also a valid terminal. 
@@ -31,6 +31,7 @@ namespace Omnia.Compiller
 
             var Expr = new NonTerminal("Expr");
             var Term = new NonTerminal("Term");
+            var DottedExpr = new NonTerminal("DottedExpr");
             var BinExpr = new NonTerminal("BinExpr");
             var UnExpr = new NonTerminal("UnExpr");
             var UnOp = new NonTerminal("UnOp", "operator");
@@ -57,8 +58,9 @@ namespace Omnia.Compiller
             OpenArg.Rule = MakeListRule(OpenArg, dot, identifier);
             OpenArgList.Rule = MakeListRule(OpenArgList, comma, OpenArg);
 
-            Expr.Rule = Term | UnExpr | BinExpr;
+            Expr.Rule = UnExpr | BinExpr | DottedExpr;
             Term.Rule = number | identifier | FunctionCall;
+            DottedExpr.Rule = MakeListRule(DottedExpr, dot, Term);
             UnExpr.Rule = UnOp + Term;
             UnOp.Rule = ToTerm("+") | "-";
             BinExpr.Rule = Expr + BinOp + Expr;
@@ -99,7 +101,7 @@ namespace Omnia.Compiller
             // 6. Miscellaneous: punctuation, braces, transient nodes
             MarkPunctuation("(", ")", ":");
             RegisterBracePair("(", ")");
-            //MarkTransient(Term, Expr, Stmt, ExtStmt, UnOp, BinOp, ExtStmt, Block);
+            MarkTransient(Term, Expr, Stmt, ExtStmt, UnOp, BinOp, ExtStmt, Block);
 
             // 7. Error recovery rule
             ExtStmt.ErrorRule = SyntaxError + Eos;
