@@ -21,22 +21,21 @@ namespace Omnia.Compiller
             var colon = ToTerm(":");
             var funcGlyph = ToTerm("->");
             var fun = ToTerm("fun");
-            var open = ToTerm("open");
 
             // 2. Non-terminals
-
             var OpenExpr = new NonTerminal("OpenExpr");
             var OpenArg = new NonTerminal("OpenArg");
             var OpenArgList = new NonTerminal("OpenArgList");
 
             var Expr = new NonTerminal("Expr");
             var Term = new NonTerminal("Term");
-            var DottedExpr = new NonTerminal("DottedExpr");
+            var Obj = new NonTerminal("Obj");
+            var ObjExpr = new NonTerminal("ObjExpr");
             var BinExpr = new NonTerminal("BinExpr");
             var UnExpr = new NonTerminal("UnExpr");
             var UnOp = new NonTerminal("UnOp", "operator");
             var BinOp = new NonTerminal("BinOp", "operator");
-            var AssignmentStmt = new NonTerminal("AssignmentStmt");
+            var Assignment = new NonTerminal("Assignment");
             var Stmt = new NonTerminal("Stmt");
             var ExtStmt = new NonTerminal("ExtStmt");
             //Just as a test for NotSupportedNode
@@ -54,20 +53,21 @@ namespace Omnia.Compiller
             var FunctionCall = new NonTerminal("FunctionCall");
             
             // 3. BNF rules
-            OpenExpr.Rule = open + "(" + OpenArgList + ")" + Eos;
+            OpenExpr.Rule = ToTerm("open") + "(" + OpenArgList + ")" + Eos;
             OpenArg.Rule = MakeListRule(OpenArg, dot, identifier);
             OpenArgList.Rule = MakeListRule(OpenArgList, comma, OpenArg);
 
-            Expr.Rule = UnExpr | BinExpr | DottedExpr;
-            Term.Rule = number | identifier | FunctionCall;
-            DottedExpr.Rule = MakeListRule(DottedExpr, dot, Term);
+            Expr.Rule = UnExpr | BinExpr | ObjExpr;
+            Term.Rule = number | identifier;
+            Obj.Rule = Term | FunctionCall;
+            ObjExpr.Rule = MakeListRule(ObjExpr, dot, Obj);
             UnExpr.Rule = UnOp + Term;
             UnOp.Rule = ToTerm("+") | "-";
             BinExpr.Rule = Expr + BinOp + Expr;
             BinOp.Rule = ToTerm("+") | "-" | "*" | "/" | "**";
             
-            AssignmentStmt.Rule = identifier + "=" + Expr;
-            Stmt.Rule = AssignmentStmt | Expr | ReturnStmt | Empty;
+            Assignment.Rule = identifier + "=" + Expr;
+            Stmt.Rule = Assignment | Expr | ReturnStmt | Empty;
             ReturnStmt.Rule = "return" + Expr;
             ExtStmt.Rule = FunctionDef | Stmt + Eos;
             StmtList.Rule = MakePlusRule(StmtList, ExtStmt);
@@ -101,7 +101,7 @@ namespace Omnia.Compiller
             // 6. Miscellaneous: punctuation, braces, transient nodes
             MarkPunctuation("(", ")", ":");
             RegisterBracePair("(", ")");
-            MarkTransient(Term, Expr, Stmt, ExtStmt, UnOp, BinOp, ExtStmt, Block);
+            MarkTransient(Term, Obj, Expr, Stmt, ExtStmt, UnOp, BinOp, ExtStmt, Block);
 
             // 7. Error recovery rule
             ExtStmt.ErrorRule = SyntaxError + Eos;
