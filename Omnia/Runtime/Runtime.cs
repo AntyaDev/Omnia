@@ -1,13 +1,13 @@
-﻿using Irony.Parsing;
+﻿using System.Linq.Expressions;
 using Omnia.Compiller;
+using Omnia.Compiller.Ast;
 using Omnia.Runtime.Binding;
 using System;
 using System.Collections.Generic;
 using System.Dynamic;
-using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using Parser = Omnia.Compiller.Parser;
+using Parser = Omnia.Compiller.Parser.Parser;
 
 namespace Omnia.Runtime
 {
@@ -21,6 +21,8 @@ namespace Omnia.Runtime
         readonly Dictionary<string, OmniaSetMemberBinder> _setMemberBinders = new Dictionary<string, OmniaSetMemberBinder>();
         readonly Dictionary<string, OmniaGetMemberBinder> _getMemberBinders = new Dictionary<string, OmniaGetMemberBinder>();
         readonly Dictionary<InvokeMemberBinderKey, OmniaInvokeMemberBinder> _invokeMemberBinders = new Dictionary<InvokeMemberBinderKey, OmniaInvokeMemberBinder>();
+        readonly Dictionary<CallInfo, OmniaInvokeBinder> _invokeBinders = new Dictionary<CallInfo, OmniaInvokeBinder>();
+        readonly Dictionary<ExpressionType, OmniaBinaryOperationBinder> _binaryOperationBinders = new Dictionary<ExpressionType, OmniaBinaryOperationBinder>();
 
         public ExpandoObject Globals { get; private set; }
 
@@ -35,9 +37,7 @@ namespace Omnia.Runtime
 
         public object ExecuteExpression(string expression)
         {
-            var ast = _parser.Parse(expression);
-
-            if (ast.Status != ParseTreeStatus.Parsed) throw new InvalidOperationException();
+            var ast =_parser.ParseExpression(expression);
 
             var scope = new AnalysisScope(
                 null,
@@ -56,7 +56,7 @@ namespace Omnia.Runtime
             return dlrExpr(this, new ExpandoObject());
         }
 
-        public object OpenModules(Runtime runtime, ExpandoObject module, string[] modulesNames)
+        public object OpenModules(Runtime runtime, ExpandoObject module, IEnumerable<string> modulesNames)
         {
             foreach (var moduleName in modulesNames)
             {
@@ -76,6 +76,13 @@ namespace Omnia.Runtime
                 : _invokeMemberBinders[key] = new OmniaInvokeMemberBinder(key.Name, key.Info);
         }
 
+        public OmniaInvokeBinder GetInvokeBinder(CallInfo callInfo)
+        {
+            return _invokeBinders.ContainsKey(callInfo)
+                ? _invokeBinders[callInfo]
+                : _invokeBinders[callInfo] = new OmniaInvokeBinder(callInfo);
+        }
+
         public OmniaSetMemberBinder GetSetMemberBinder(string name)
         {
             return _setMemberBinders.ContainsKey(name)
@@ -88,6 +95,13 @@ namespace Omnia.Runtime
             return _getMemberBinders.ContainsKey(name)
                 ? _getMemberBinders[name]
                 : _getMemberBinders[name] = new OmniaGetMemberBinder(name);
+        }
+
+        public OmniaBinaryOperationBinder GetBinaryOperationBinder(ExpressionType operation)
+        {
+            return _binaryOperationBinders.ContainsKey(operation)
+                ? _binaryOperationBinders[operation]
+                : _binaryOperationBinders[operation] = new OmniaBinaryOperationBinder(operation);
         }
 
         object GetSite(IDynamicMetaObjectProvider metaObject, string name)
