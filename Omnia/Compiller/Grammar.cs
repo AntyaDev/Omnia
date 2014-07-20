@@ -60,6 +60,7 @@ namespace Omnia.Compiller
             var Class = new NonTerminal("Class");
             var OptionParamStart = ToTerm("(") | Empty;
             var OptionParamEnd = ToTerm(")") | Empty;
+            var InitClass = new NonTerminal("InitClass");
             
             // 3. BNF rules
             OpenExpr.Rule = ToTerm("open") + OpenArgExtStmt | ToTerm("open") + OpenArg + Eos + OpenArgBlock;
@@ -70,7 +71,7 @@ namespace Omnia.Compiller
 
             Expr.Rule = UnExpr | BinExpr | ObjExpr;
             Term.Rule = number | identifier;
-            Obj.Rule = Term | FunctionCall | PipeFunctionCall | PipeCall;
+            Obj.Rule = Term | FunctionCall | PipeFunctionCall | PipeCall | InitClass;
             ObjExpr.Rule = MakeListRule(ObjExpr, dot, Obj);
             UnExpr.Rule = UnOp + Term;
             UnOp.Rule = ToTerm("+") | "-";
@@ -104,6 +105,8 @@ namespace Omnia.Compiller
 
             Class.Rule = CLASS + identifier + Eos + Block
                          | CLASS + identifier + "(" + ParamList + ")" + Eos + Block;
+
+            InitClass.Rule = "new" + identifier + "(" + ArgList + ")";
 
             Root = Program;       // Set grammar root
 
