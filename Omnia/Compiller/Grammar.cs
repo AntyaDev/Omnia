@@ -59,6 +59,7 @@ namespace Omnia.Compiller
             var PipeFunctionCall = new NonTerminal("PipeFunctionCall");
             var PipeCall = new NonTerminal("PipeCall");
             var Class = new NonTerminal("Class");
+            var PublicMethod = new NonTerminal("PublicMethod");
             var OptionParamStart = ToTerm("(") | Empty;
             var OptionParamEnd = ToTerm(")") | Empty;
             var InitClass = new NonTerminal("InitClass");
@@ -82,7 +83,7 @@ namespace Omnia.Compiller
             Assignment.Rule = identifier + "=" + Expr;
             Stmt.Rule = Assignment | Expr | ReturnStmt | Empty;
             ReturnStmt.Rule = "return" + Expr;
-            ExtStmt.Rule = Class | FunctionDef | Stmt + Eos;
+            ExtStmt.Rule = Class | PublicMethod | FunctionDef | Stmt + Eos;
             StmtList.Rule = MakePlusRule(StmtList, ExtStmt);
             Block.Rule = Indent + StmtList + Dedent;
             Program.Rule = StmtList | OpenExpr + StmtList;
@@ -94,7 +95,9 @@ namespace Omnia.Compiller
             ArgList.Rule = MakeStarRule(ArgList, comma, Arg);
             
             LamdaDef.Rule = "(" + ParamList + ")" + funcGlyph + Eos + Block
-                            | "(" + ParamList + ")" + funcGlyph + Expr;
+                            | funcGlyph + Eos + Block
+                            | "(" + ParamList + ")" + funcGlyph + Expr
+                            | funcGlyph + Expr;
 
             FunctionDef.Rule = identifier + "=" + LamdaDef;
 
@@ -106,6 +109,8 @@ namespace Omnia.Compiller
 
             Class.Rule = CLASS + identifier + Eos + Block
                          | CLASS + identifier + "(" + ParamList + ")" + Eos + Block;
+
+            PublicMethod.Rule = identifier + ":" + LamdaDef;
 
             InitClass.Rule = "new" + identifier + "(" + ArgList + ")";
 
