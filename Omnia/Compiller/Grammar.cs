@@ -12,6 +12,7 @@ namespace Omnia.Compiller
             // 1. Terminals
             var number = TerminalFactory.CreateCSharpNumber("Number");
             var identifier = TerminalFactory.CreateCSharpIdentifier("Identifier");
+            var @string = TerminalFactory.CreatePythonString("String");
             var comment = new CommentTerminal("Comment", "#", "\n", "\r");
             //comment must to be added to NonGrammarTerminals list; it is not used directly in grammar rules,
             // so we add it to this list to let Scanner know that it is also a valid terminal. 
@@ -70,7 +71,7 @@ namespace Omnia.Compiller
             OpenArgBlock.Rule = Indent + OpenArgStmtList + Dedent;
 
             Expr.Rule = UnExpr | BinExpr | ObjExpr;
-            Term.Rule = number | identifier;
+            Term.Rule = @string | number | identifier;
             Obj.Rule = Term | FunctionCall | PipeFunctionCall | PipeCall | InitClass;
             ObjExpr.Rule = MakeListRule(ObjExpr, dot, Obj);
             UnExpr.Rule = UnOp + Term;
