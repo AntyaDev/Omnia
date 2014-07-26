@@ -30,35 +30,38 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Irony">
+    <Reference Include="Irony, Version=1.0.0.0, Culture=neutral, PublicKeyToken=ca48ace7223ead47, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\Irony.0.9.1-net40\lib\net40\Irony.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Dynamic">
+      <HintPath>..\packages\DLR\Microsoft.Dynamic.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Scripting">
+      <HintPath>..\packages\DLR\Microsoft.Scripting.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Compiller\ETGenerator.cs" />
-    <Compile Include="Compiller\Grammar.cs" />
-    <Compile Include="Compiller\Parser.cs" />
-    <Compile Include="OmniaContext.cs" />
+    <Compile Include="Hosting\OmniaContext.cs" />
+    <Compile Include="Hosting\OmniaEngine.cs" />
+    <Compile Include="Hosting\OmniaScriptCode.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Runtime\Binding\HelperGetMemberBinder.cs" />
-    <Compile Include="Runtime\Binding\InvokeMemberBinderKey.cs" />
-    <Compile Include="Runtime\Binding\OmniaGetMemberBinder.cs" />
-    <Compile Include="Runtime\Binding\OmniaInvokeBinder.cs" />
-    <Compile Include="Runtime\Binding\OmniaInvokeMemberBinder.cs" />
-    <Compile Include="Runtime\Binding\OmniaSetMemberBinder.cs" />
-    <Compile Include="Runtime\Runtime.cs" />
-    <Compile Include="Compiller\AnalysisScope.cs" />
-    <Compile Include="Compiller\TypeModel.cs" />
-    <Compile Include="Runtime\RuntimeHelper.cs" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <ProjectReference Include="..\Omnia.CodeGen\Omnia.CodeGen.csproj">
+      <Project>{14F05491-8CF6-46D6-BD84-44E1F416BD63}</Project>
+      <Name>Omnia.CodeGen</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Omnia.Parser\Omnia.Parser.csproj">
+      <Project>{9F87479E-1449-474A-BE89-9670002C911A}</Project>
+      <Name>Omnia.Parser</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

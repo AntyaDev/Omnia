@@ -4,17 +4,15 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{93F566FF-BFCD-448C-A808-95ADBEDEBFA8}</ProjectGuid>
-    <OutputType>Exe</OutputType>
+    <ProjectGuid>{14F05491-8CF6-46D6-BD84-44E1F416BD63}</ProjectGuid>
+    <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Omnia.Console</RootNamespace>
-    <AssemblyName>Omnia.Console</AssemblyName>
-    <TargetFrameworkVersion>v4.5.1</TargetFrameworkVersion>
+    <RootNamespace>Omnia.CodeGen</RootNamespace>
+    <AssemblyName>Omnia.CodeGen</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
-    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
@@ -24,7 +22,6 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
@@ -33,31 +30,42 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Microsoft.Dynamic">
-      <HintPath>..\packages\DLR\Microsoft.Dynamic.dll</HintPath>
+    <Reference Include="FunctionalWeapon">
+      <HintPath>..\packages\FunctionalWeapon\FunctionalWeapon.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.Scripting, Version=1.2.0.0, Culture=neutral, PublicKeyToken=7f709c5b713576e1, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\DLR\Microsoft.Scripting.dll</HintPath>
+    <Reference Include="Irony">
+      <HintPath>..\packages\Irony.0.9.1-net40\lib\net40\Irony.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Program.cs" />
+    <Compile Include="TypeSystem\OmniaObject.cs" />
+    <Compile Include="Runtime\AnalysisScope.cs" />
+    <Compile Include="DLRCodeGen.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Runtime\Binders\HelperGetMemberBinder.cs" />
+    <Compile Include="Runtime\Binders\InvokeMemberBinderKey.cs" />
+    <Compile Include="Runtime\Binders\OmniaBinaryOperationBinder.cs" />
+    <Compile Include="Runtime\Binders\OmniaGetMemberBinder.cs" />
+    <Compile Include="Runtime\Binders\OmniaInvokeBinder.cs" />
+    <Compile Include="Runtime\Binders\OmniaInvokeMemberBinder.cs" />
+    <Compile Include="Runtime\Binders\OmniaSetMemberBinder.cs" />
+    <Compile Include="OmniaRuntime.cs" />
+    <Compile Include="Runtime\Binders\RuntimeHelper.cs" />
+    <Compile Include="TypeSystem\TypeGenerator.cs" />
+    <Compile Include="TypeSystem\TypeModel.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Omnia\Omnia.csproj">
-      <Project>{cf5d9819-9c04-4dc7-a833-44fd13467d3b}</Project>
-      <Name>Omnia</Name>
+    <ProjectReference Include="..\Omnia.Parser\Omnia.Parser.csproj">
+      <Project>{9f87479e-1449-474a-be89-9670002c911a}</Project>
+      <Name>Omnia.Parser</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <None Include="test.om">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
+    <None Include="packages.config" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
