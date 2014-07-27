@@ -1,0 +1,452 @@
+{
+    "comment": "Omnia: version 1",     
+    "name": "Omnia", 
+    "repository": {
+        "single_quoted_string": {
+            "patterns": [
+                {
+                    "begin": "'", 
+                    "end": "'", 
+                    "name": "string.quoted.single.omnia", 
+                    "endCaptures": {
+                        "0": {
+                            "name": "punctuation.definition.string.end.omnia"
+                        }
+                    }, 
+                    "beginCaptures": {
+                        "0": {
+                            "name": "punctuation.definition.string.begin.omnia"
+                        }
+                    }, 
+                    "patterns": [
+                        {
+                            "name": "constant.character.escape.omnia", 
+                            "match": "\\\\(x\\h{2}|[0-2][0-7]{,2}|3[0-6][0-7]?|37[0-7]?|[4-7][0-7]?|.)"
+                        }
+                    ]
+                }
+            ]
+        }, 
+        "embedded_comment": {
+            "patterns": [
+                {
+                    "captures": {
+                        "1": {
+                            "name": "punctuation.definition.comment.omnia"
+                        }
+                    }, 
+                    "name": "comment.line.number-sign.omnia", 
+                    "match": "(?<!\\\\)(#).*$\\n?"
+                }
+            ]
+        }, 
+        "numeric": {
+            "patterns": [
+                {
+                    "name": "constant.numeric.omnia", 
+                    "match": "(?<!\\$)\\b((0([box])[0-9a-fA-F]+)|([0-9]+(\\.[0-9]+)?(e[+\\-]?[0-9]+)?))\\b"
+                }
+            ]
+        }, 
+        "interpolated_omnia": {
+            "patterns": [
+                {
+                    "captures": {
+                        "0": {
+                            "name": "punctuation.section.embedded.omnia"
+                        }
+                    }, 
+                    "begin": "\\#\\{", 
+                    "end": "\\}", 
+                    "name": "source.omnia.embedded.source", 
+                    "patterns": [
+                        {
+                            "include": "$self"
+                        }
+                    ]
+                }
+            ]
+        }, 
+        "variable_name": {
+            "patterns": [
+                {
+                    "captures": {
+                        "1": {
+                            "name": "variable.assignment.omnia"
+                        }
+                    }, 
+                    "name": "variable.assignment.omnia", 
+                    "match": "([a-zA-Z\\$_]\\w*(\\.\\w+)*)"
+                }
+            ]
+        }, 
+        "double_quoted_string": {
+            "patterns": [
+                {
+                    "begin": "\"", 
+                    "end": "\"", 
+                    "name": "string.quoted.double.omnia", 
+                    "endCaptures": {
+                        "0": {
+                            "name": "punctuation.definition.string.end.omnia"
+                        }
+                    }, 
+                    "beginCaptures": {
+                        "0": {
+                            "name": "punctuation.definition.string.begin.omnia"
+                        }
+                    }, 
+                    "patterns": [
+                        {
+                            "name": "constant.character.escape.omnia", 
+                            "match": "\\\\(x\\h{2}|[0-2][0-7]{,2}|3[0-6][0-7]|37[0-7]?|[4-7][0-7]?|.)"
+                        }, 
+                        {
+                            "include": "#interpolated_omnia"
+                        }
+                    ]
+                }
+            ]
+        }, 
+        "instance_variable": {
+            "patterns": [
+                {
+                    "name": "variable.other.readwrite.instance.omnia", 
+                    "match": "(@)([a-zA-Z_\\$]\\w*)?"
+                }
+            ]
+        }
+    }, 
+    "foldingStartMarker": "^\\s*class\\s+\\S.*$|.*(->|=>)\\s*$|.*[\\[{]\\s*$", 
+    "scopeName": "source.omnia", 
+    "keyEquivalent": "^~C", 
+    "patterns": [
+        {
+            "comment": "match stuff like: a -> \u2026 ", 
+            "captures": {
+                "1": {
+                    "name": "variable.parameter.function.omnia"
+                }, 
+                "2": {
+                    "name": "storage.type.function.omnia"
+                }
+            }, 
+            "name": "meta.inline.function.omnia", 
+            "match": "(\\([^()]*?\\))\\s*([=-]>)"
+        }, 
+        {
+            "captures": {
+                "1": {
+                    "name": "keyword.operator.new.omnia"
+                }, 
+                "2": {
+                    "name": "support.class.omnia"
+                }
+            }, 
+            "name": "meta.class.instance.constructor", 
+            "match": "(new)\\s+(\\w+(?:\\.\\w*)*)"
+        }, 
+        {
+            "endCaptures": {
+                "0": {
+                    "name": "punctuation.definition.string.end.omnia"
+                }
+            }, 
+            "begin": "'''", 
+            "end": "'''", 
+            "name": "string.quoted.heredoc.omnia", 
+            "beginCaptures": {
+                "0": {
+                    "name": "punctuation.definition.string.begin.omnia"
+                }
+            }
+        }, 
+        {
+            "begin": "\"\"\"", 
+            "end": "\"\"\"", 
+            "name": "string.quoted.double.heredoc.omnia", 
+            "endCaptures": {
+                "0": {
+                    "name": "punctuation.definition.string.end.omnia"
+                }
+            }, 
+            "beginCaptures": {
+                "0": {
+                    "name": "punctuation.definition.string.begin.omnia"
+                }
+            }, 
+            "patterns": [
+                {
+                    "name": "constant.character.escape.omnia", 
+                    "match": "\\\\."
+                }, 
+                {
+                    "include": "#interpolated_omnia"
+                }
+            ]
+        }, 
+        {
+            "begin": "`", 
+            "end": "`", 
+            "name": "string.quoted.script.omnia", 
+            "endCaptures": {
+                "0": {
+                    "name": "punctuation.definition.string.end.omnia"
+                }
+            }, 
+            "beginCaptures": {
+                "0": {
+                    "name": "punctuation.definition.string.begin.omnia"
+                }
+            }, 
+            "patterns": [
+                {
+                    "name": "constant.character.escape.omnia", 
+                    "match": "\\\\(x\\h{2}|[0-2][0-7]{,2}|3[0-6][0-7]|37[0-7]?|[4-7][0-7]?|.)"
+                }
+            ]
+        }, 
+        {
+            "captures": {
+                "0": {
+                    "name": "punctuation.definition.comment.omnia"
+                }
+            }, 
+            "begin": "(?<!#)###(?!#)", 
+            "end": "###(?:[ \\t]*\\n)", 
+            "name": "comment.block.omnia", 
+            "patterns": [
+                {
+                    "name": "storage.type.annotation.omniascript", 
+                    "match": "@\\w*"
+                }
+            ]
+        }, 
+        {
+            "captures": {
+                "1": {
+                    "name": "punctuation.definition.comment.omnia"
+                }
+            }, 
+            "name": "comment.line.number-sign.omnia", 
+            "match": "(#)(?!\\{).*$\\n?"
+        }, 
+        {
+            "patterns": [
+                {
+                    "include": "#interpolated_omnia"
+                }, 
+                {
+                    "include": "#embedded_comment"
+                }
+            ], 
+            "begin": "/{3}", 
+            "end": "/{3}[imgy]{0,4}", 
+            "name": "string.regexp.omnia"
+        }, 
+        {
+            "name": "string.regexp.omnia", 
+            "match": "/(?![\\s=/*+{}?]).*?[^\\\\]/[igmy]{0,4}(?![a-zA-Z0-9])"
+        }, 
+        {
+            "name": "keyword.control.omnia", 
+            "match": "(?x)\n\\b(?<![\\.\\$])(\nbreak|by|catch|continue|else|finally|for|in|of|if|return|switch|\nthen|throw|try|unless|when|while|until|loop|do|(?<=for)\\s+own\n)(?!\\s*:)\\b\n"
+        }, 
+        {
+            "name": "keyword.operator.omnia", 
+            "match": "(?x)\nand=|or=|!|%|&|\\^|\\*|\\/|(\\-)?\\-(?!>)|\\+\\+|\\+|~|==|=(?!>)|!=|<=|>=|<<=|>>=|\n>>>=|<>|<|>|!|&&|\\.\\.(\\.)?|\\?|\\||\\|\\||\\:|\\*=|(?<!\\()/=|%=|\\+=|\\-=|&=|\n\\^=|\\b(?<![\\.\\$])(instanceof|new|delete|typeof|and|or|is|isnt|not|super)\\b\n"
+        }, 
+        {
+            "captures": {
+                "1": {
+                    "name": "variable.assignment.omnia"
+                }, 
+                "5": {
+                    "name": "keyword.operator.omnia"
+                }, 
+                "4": {
+                    "name": "punctuation.separator.key-value"
+                }
+            }, 
+            "name": "variable.assignment.omnia", 
+            "match": "([a-zA-Z\\$_](\\w|\\$|\\.)*\\s*(?!\\::)((:)|(=[^=]))(?!(\\s*\\(.*\\))?\\s*((=|-)>)))"
+        }, 
+        {
+            "begin": "(?<=\\s|^)([\\[\\{])(?=.*?[\\]\\}]\\s+[:=])", 
+            "end": "([\\]\\}]\\s*[:=])", 
+            "name": "meta.variable.assignment.destructured.omnia", 
+            "endCaptures": {
+                "0": {
+                    "name": "keyword.operator.omnia"
+                }
+            }, 
+            "beginCaptures": {
+                "0": {
+                    "name": "keyword.operator.omnia"
+                }
+            }, 
+            "patterns": [
+                {
+                    "include": "#variable_name"
+                }, 
+                {
+                    "include": "#instance_variable"
+                }, 
+                {
+                    "include": "#single_quoted_string"
+                }, 
+                {
+                    "include": "#double_quoted_string"
+                }, 
+                {
+                    "include": "#numeric"
+                }
+            ]
+        }, 
+        {
+            "captures": {
+                "3": {
+                    "name": "entity.name.function.omnia"
+                }, 
+                "2": {
+                    "name": "entity.name.function.omnia"
+                }, 
+                "5": {
+                    "name": "storage.type.function.omnia"
+                }, 
+                "4": {
+                    "name": "variable.parameter.function.omnia"
+                }
+            }, 
+            "name": "meta.function.omnia", 
+            "match": "(?x)\n(\\s*)\n(?=[a-zA-Z\\$_])\n(\n[a-zA-Z\\$_](\\w|\\$|:|\\.)*\\s*\n(?=[:=](\\s*\\(.*\\))?\\s*([=-]>))\n)\n"
+        }, 
+        {
+            "comment": "Show well-known functions from Express and Mocha in Go To Symbol view", 
+            "patterns": [
+                {
+                    "include": "$self"
+                }
+            ], 
+            "begin": "^\\s*(describe|it|app\\.(get|post|put|all|del|delete))", 
+            "end": "$", 
+            "name": "meta.function.symbols.omnia"
+        }, 
+        {
+            "name": "storage.type.function.omnia", 
+            "match": "[=-]>"
+        }, 
+        {
+            "name": "constant.language.boolean.true.omnia", 
+            "match": "\\b(?<!\\.)(true|on|yes)(?!\\s*[:=])\\b"
+        }, 
+        {
+            "name": "constant.language.boolean.false.omnia", 
+            "match": "\\b(?<!\\.)(false|off|no)(?!\\s*[:=])\\b"
+        }, 
+        {
+            "name": "constant.language.null.omnia", 
+            "match": "\\b(?<!\\.)null(?!\\s*[:=])\\b"
+        }, 
+        {
+            "name": "variable.language.omnia", 
+            "match": "\\b(?<!\\.)(this|extends)(?!\\s*[:=])\\b"
+        }, 
+        {
+            "captures": {
+                "1": {
+                    "name": "storage.type.class.omnia"
+                }, 
+                "3": {
+                    "name": "keyword.control.inheritance.omnia"
+                }, 
+                "2": {
+                    "name": "entity.name.type.class.omnia"
+                }, 
+                "4": {
+                    "name": "entity.other.inherited-class.omnia"
+                }
+            }, 
+            "name": "meta.class.omnia", 
+            "match": "(class\\b)\\s+(@?[a-zA-Z\\$_][\\w\\.]*)?(?:\\s+(extends)\\s+(@?[a-zA-Z\\$\\._][\\w\\.]*))?"
+        }, 
+        {
+            "name": "keyword.other.omnia", 
+            "match": "\\b(open|debugger|\\\\)\\b"
+        }, 
+        {
+            "name": "support.class.omnia", 
+            "match": "(?x)\\b(\nArray|ArrayBuffer|Blob|Boolean|Date|document|event|Function|\nInt(8|16|32|64)Array|Math|Map|Number|\nObject|Proxy|RegExp|Set|String|WeakMap|\nwindow|Uint(8|16|32|64)Array|XMLHttpRequest\n)\\b"
+        }, 
+        {
+            "name": "support.function.console.omnia", 
+            "match": "((?<=console\\.)(debug|warn|info|log|error|time|timeEnd|assert))\\b"
+        }, 
+        {
+            "name": "support.function.omnia", 
+            "match": "(?x)\\b(\ndecodeURI(Component)?|encodeURI(Component)?|eval|parse(Float|Int)|require\n)\\b"
+        }, 
+        {
+            "name": "support.function.method.array.omnia", 
+            "match": "(?x)((?<=\\.)(\napply|call|concat|every|filter|forEach|from|hasOwnProperty|indexOf|\nisPrototypeOf|join|lastIndexOf|map|of|pop|propertyIsEnumerable|push|\nreduce(Right)?|reverse|shift|slice|some|sort|splice|to(Locale)?String|\nunshift|valueOf\n))\\b"
+        }, 
+        {
+            "name": "support.function.static.array.omnia", 
+            "match": "(?x)((?<=Array\\.)(\nisArray\n))\\b"
+        }, 
+        {
+            "name": "support.function.static.object.omnia", 
+            "match": "(?x)((?<=Object\\.)(\ncreate|definePropert(ies|y)|freeze|getOwnProperty(Descriptors?|Names)|\ngetProperty(Descriptor|Names)|getPrototypeOf|is(Extensible|Frozen|Sealed)?|\nisnt|keys|preventExtensions|seal\n))\\b"
+        }, 
+        {
+            "name": "support.function.static.math.omnia", 
+            "match": "(?x)((?<=Math\\.)(\nabs|acos|acosh|asin|asinh|atan|atan2|atanh|ceil|cos|cosh|exp|expm1|floor|\nhypot|log|log10|log1p|log2|max|min|pow|random|round|sign|sin|sinh|sqrt|\ntan|tanh|trunc\n))\\b"
+        }, 
+        {
+            "name": "support.function.static.number.omnia", 
+            "match": "(?x)((?<=Number\\.)(\nis(Finite|Integer|NaN)|toInteger\n))\\b"
+        }, 
+        {
+            "name": "constant.language.omnia", 
+            "match": "\\b(Infinity|NaN|undefined)\\b"
+        }, 
+        {
+            "name": "punctuation.terminator.statement.omnia", 
+            "match": "\\;"
+        }, 
+        {
+            "name": "meta.delimiter.object.comma.omnia", 
+            "match": ",[ |\\t]*"
+        }, 
+        {
+            "name": "meta.delimiter.method.period.omnia", 
+            "match": "\\."
+        }, 
+        {
+            "name": "meta.brace.curly.omnia", 
+            "match": "\\{|\\}"
+        }, 
+        {
+            "name": "meta.brace.round.omnia", 
+            "match": "\\(|\\)"
+        }, 
+        {
+            "name": "meta.brace.square.omnia", 
+            "match": "\\[|\\]\\s*"
+        }, 
+        {
+            "include": "#instance_variable"
+        }, 
+        {
+            "include": "#single_quoted_string"
+        }, 
+        {
+            "include": "#double_quoted_string"
+        }, 
+        {
+            "include": "#numeric"
+        }
+    ], 
+    "foldingStopMarker": "^\\s*$|^\\s*[}\\]]\\s*$",
+    "fileTypes": ["om"]
+}
