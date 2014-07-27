@@ -1,0 +1,7 @@
+open System
+	 System.Text
+	 Ststem.Linq
+
+print = (value) -> System.Console.WriteLine(value)
+
+'Hello Kiev ALT .NET, I am Omnia - new .NET programming language' |> print

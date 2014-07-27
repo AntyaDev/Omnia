@@ -12,6 +12,8 @@ namespace Omnia.Hosting
     {
         readonly OmniaRuntime _runtime;
         readonly AnalysisScope _scope;
+        readonly OmniaParser _parser = new OmniaParser();
+        readonly DLRCodeGen _codeGen = new DLRCodeGen();
 
         public OmniaEngine(OmniaRuntime runtime)
         {
@@ -26,11 +28,9 @@ namespace Omnia.Hosting
 
         public object ExecuteSourceUnit(SourceUnit sourceUnit)
         {
-            var parser = new OmniaParser();
-            var ast = parser.Parse(sourceUnit.GetCode());
-
-            var codeGen = new DLRCodeGen();
-            var dlrAst = Expression.Block(codeGen.GenerateDLRAst(ast, _scope));
+            var ast = _parser.Parse(sourceUnit.GetCode());
+            
+            var dlrAst = Expression.Block(_codeGen.GenerateDLRAst(ast, _scope));
 
             var dlrExpr = Expression.Lambda<Func<OmniaRuntime, ExpandoObject, object>>(
                 dlrAst,

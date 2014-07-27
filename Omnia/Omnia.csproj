@@ -44,6 +44,7 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Hosting\Omnia.cs" />
     <Compile Include="Hosting\OmniaContext.cs" />
     <Compile Include="Hosting\OmniaEngine.cs" />
     <Compile Include="Hosting\OmniaScriptCode.cs" />

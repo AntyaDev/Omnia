@@ -9,6 +9,10 @@ namespace Omnia.Hosting
 {
     public class OmniaContext : LanguageContext
     {
+        public const string OmniaDisplayName = "Omnia 0.0.0.0";
+        public const string OmniaNames = "Omnia;om";
+        public const string OmniaFileExtensions = ".om";
+
         readonly OmniaEngine _engine;
         readonly IDictionary<string, object> _options;
 
@@ -27,6 +31,7 @@ namespace Omnia.Hosting
                     case SourceCodeKind.SingleStatement:
                     case SourceCodeKind.Expression:
                     case SourceCodeKind.AutoDetect:
+                    case SourceCodeKind.File:
                     case SourceCodeKind.InteractiveCode: return new OmniaScriptCode(_engine, sourceUnit);
                     default: throw Assert.Unreachable;
                 }
